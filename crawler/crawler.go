@@ -1,15 +1,14 @@
-package main
+package crawler
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/quocquann/locallibrary/models"
 )
 
-func crawlBook(url string) ([]models.Book, error) {
+func CrawlBook(url string) ([]models.Book, error) {
 	books := []models.Book{}
 	res, err := http.Get(url)
 	if err != nil {
@@ -59,14 +58,4 @@ func getDetail(url string, ch chan string) {
 		ch <- author
 		ch <- genre
 	})
-}
-
-func main() {
-	books, err := crawlBook("https://gacxepbookstore.vn")
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, book := range books {
-		fmt.Println(book)
-	}
 }
