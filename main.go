@@ -42,5 +42,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(books)
+	for _, book := range books {
+		fmt.Println(book)
+	}
 }
