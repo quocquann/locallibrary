@@ -1,5 +1,8 @@
 package models
 
 type Book struct {
-	Title string
+	Title  string
+	Image  string
+	Author string
+	Genre  string
 }
