@@ -3,12 +3,12 @@
 
 # Setup
     Run below command to get all dependences that you net to run this service
-``` go mod tidy ```
+`go mod tidy`
 
 # Scripts
 - Run server:
-    ``` go run server/server.go ```
+`go run server/server.go`
 
 - Test the server with client:
-    ``` go run client/client.go ```
+`go run client/client.go`
 
