@@ -6,3 +6,9 @@ type Book struct {
 	Author string
 	Genre  string
 }
+
+type BookBaseInfo struct {
+	Title string
+	Image string
+	Url   string
+}

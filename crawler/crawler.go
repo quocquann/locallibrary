@@ -2,8 +2,8 @@ package crawler
 
 import (
 	"fmt"
+	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/quocquann/locallibrary/models"
@@ -28,81 +28,53 @@ func CrawlBook(url string) ([]models.Book, error) {
 		return []models.Book{}, err
 	}
 
-	doc.Find(".product-loop-1.product-loop-sea.product-base").Each(func(i int, s *goquery.Selection) {
-		title := s.Find("h3.product-name a").Text()
-		image := s.Find(".product-thumbnail>a.image_link.display_flex>img").AttrOr("data-lazyload", "")
+	bookItems := doc.Find(".product-loop-1.product-loop-sea.product-base")
+
+	numBookItem := bookItems.Length()
+
+	const numWorker int = 3
+	jobs := make(chan models.BookBaseInfo, numBookItem)
+	result := make(chan models.Book, numBookItem)
+
+	var title, image string
+
+	bookItems.Each(func(i int, s *goquery.Selection) {
+		title = s.Find("h3.product-name a").Text()
+		image = s.Find(".product-thumbnail>a.image_link.display_flex>img").AttrOr("data-lazyload", "")
 		detailUrl := s.Find("h3.product-name a").AttrOr("href", "")
-		ch := make(chan string, 2)
-		go getDetail(url+detailUrl, ch)
-		book := models.Book{Title: title, Image: "https:" + image, Author: <-ch, Genre: <-ch}
-		books = append(books, book)
+		jobs <- models.BookBaseInfo{Title: title, Image: image, Url: url + detailUrl}
 	})
+
+	for i := 0; i < numWorker; i++ {
+		go getDetail(jobs, result)
+	}
+
+	close(jobs)
+
+	for i := 0; i < numBookItem; i++ {
+		books = append(books, <-result)
+	}
 
 	return books, nil
 }
 
-func CrawlAllBook(url string) ([]models.Book, error) {
-	books := []models.Book{}
-	res, err := http.Get(url)
-	if err != nil {
-		return []models.Book{}, err
+func getDetail(jobs chan models.BookBaseInfo, result chan models.Book) {
+	for job := range jobs {
+		res, err := http.Get(job.Url)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer res.Body.Close()
+		doc, err := goquery.NewDocumentFromReader(res.Body)
+
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		author := doc.Find(".group-status").First().Find("p:first-child a").Text()
+		genre := doc.Find(".group-status").First().Find("p:nth-child(2) a").Text()
+		result <- models.Book{Title: job.Title, Image: "https:" + job.Image, Author: author, Genre: genre}
 	}
-
-	if res.StatusCode != 200 {
-		return []models.Book{}, fmt.Errorf("status code error: %d", res.StatusCode)
-	}
-
-	defer res.Body.Close()
-
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-
-	if err != nil {
-		return []models.Book{}, err
-	}
-
-	totalPage := getTotalPage(doc)
-	fmt.Println(totalPage)
-
-	doc.Find(".product-loop-1.product-loop-2.product-loop-col.product-base").Each(func(i int, s *goquery.Selection) {
-		title := s.Find("h3.product-name a").Text()
-		image := s.Find(".product-thumbnail>a.image_link.display_flex>img").AttrOr("data-lazyload", "")
-		detailUrl := s.Find("h3.product-name a").AttrOr("href", "")
-		ch := make(chan string, 2)
-		go getDetail(url+detailUrl, ch)
-		book := models.Book{Title: title, Image: "https:" + image, Author: <-ch, Genre: <-ch}
-		books = append(books, book)
-	})
-
-	return books, nil
-}
-
-func getTotalPage(doc *goquery.Document) int {
-	lastPage := doc.Find("ul.pagination>li:last-child>a").Text()
-	fmt.Println(lastPage)
-	res, err := strconv.Atoi(lastPage)
-	if err != nil {
-		fmt.Println(err)
-		return -1
-	}
-	return res
-}
-
-func getDetail(url string, ch chan string) {
-	res, err := http.Get(url)
-	if err != nil {
-		return
-	}
-	defer res.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-
-	if err != nil {
-		return
-	}
-
-	doc.Find(".group-status").Each(func(i int, s *goquery.Selection) {
-		author := s.Find("p:first-child a").Text()
-		genre := s.Find("p:nth-child(2) a").Text()
-		ch <- author
-		ch <- genre
-	})
 }

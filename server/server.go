@@ -14,7 +14,7 @@ type server struct {
 }
 
 func (*server) GetBook(req *pb.BookRequest, stream pb.Book_GetBookServer) error {
-	books, err := crawler.CrawlAllBook("https://gacxepbookstore.vn/all-books")
+	books, err := crawler.CrawlBook("https://gacxepbookstore.vn")
 	if err != nil {
 		return err
 	}
