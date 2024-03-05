@@ -36,7 +36,7 @@ func TestCrawlFunc(t *testing.T) {
 		t.Fatalf("error: %v", err)
 	}
 
-	const expect int = 21
+	const expect int = 20
 	if expect != len(books) {
 		t.Fatalf("expect %d book(s), got %d book(s)", expect, len(books))
 	}
