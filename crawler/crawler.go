@@ -32,24 +32,22 @@ func CrawlBook(url string) ([]models.Book, error) {
 
 	numBookItem := bookItems.Length()
 
-	const numWorker int = 3
+	const numWorker int = 20
 	jobs := make(chan models.BookBaseInfo, numBookItem)
-	result := make(chan models.Book, numBookItem)
-
-	var title, image string
+	result := make(chan models.Book)
 
 	bookItems.Each(func(i int, s *goquery.Selection) {
-		title = s.Find("h3.product-name a").Text()
-		image = s.Find(".product-thumbnail>a.image_link.display_flex>img").AttrOr("data-lazyload", "")
+		title := s.Find("h3.product-name a").Text()
+		image := s.Find(".product-thumbnail>a.image_link.display_flex>img").AttrOr("data-lazyload", "")
 		detailUrl := s.Find("h3.product-name a").AttrOr("href", "")
 		jobs <- models.BookBaseInfo{Title: title, Image: image, Url: url + detailUrl}
 	})
 
+	close(jobs)
+
 	for i := 0; i < numWorker; i++ {
 		go getDetail(jobs, result)
 	}
-
-	close(jobs)
 
 	for i := 0; i < numBookItem; i++ {
 		books = append(books, <-result)
@@ -63,6 +61,11 @@ func getDetail(jobs chan models.BookBaseInfo, result chan models.Book) {
 		res, err := http.Get(job.Url)
 		if err != nil {
 			log.Println(err)
+			return
+		}
+
+		if res.StatusCode != 200 {
+			log.Printf("status code error: %d\n", res.StatusCode)
 			return
 		}
 		defer res.Body.Close()
