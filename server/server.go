@@ -3,6 +3,9 @@ package main
 import (
 	"log"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/quocquann/locallibrary/crawler"
 	pb "github.com/quocquann/locallibrary/protos/book"
@@ -35,8 +38,17 @@ func main() {
 
 	pb.RegisterBookServer(s, &server{})
 
-	log.Printf("server listening at %v", lis.Addr())
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
+	stop := make(chan os.Signal, 2)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		log.Printf("server listening at %v", lis.Addr())
+		if err := s.Serve(lis); err != nil {
+			log.Println(err)
+			stop <- syscall.SIGINT
+		}
+	}()
+	<-stop
+	s.GracefulStop()
+	log.Println("server's shutting down")
 }
