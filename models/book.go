@@ -1,6 +1,7 @@
 package models
 
 type Book struct {
+	Isbn   string
 	Title  string
 	Image  string
 	Author string

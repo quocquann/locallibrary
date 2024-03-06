@@ -78,6 +78,7 @@ func getDetail(jobs chan models.BookBaseInfo, result chan models.Book) {
 
 		author := doc.Find(".group-status").First().Find("p:first-child a").Text()
 		genre := doc.Find(".group-status").First().Find("p:nth-child(2) a").Text()
-		result <- models.Book{Title: job.Title, Image: "https:" + job.Image, Author: author, Genre: genre}
+		isbn := doc.Find(".product-summary.product_description ul>li:nth-child(4)").Text()
+		result <- models.Book{Title: job.Title, Image: "https:" + job.Image, Author: author, Genre: genre, Isbn: isbn}
 	}
 }
