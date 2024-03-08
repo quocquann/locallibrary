@@ -16,21 +16,16 @@ import (
 
 type server struct {
 	pb.UnimplementedBookServer
+	db *db.Queries
 }
 
-func (*server) GetBook(req *pb.BookRequest, stream pb.Book_GetBookServer) error {
+func (s *server) GetBook(req *pb.BookRequest, stream pb.Book_GetBookServer) error {
 	books, err := crawler.CrawlBook("https://gacxepbookstore.vn")
 	if err != nil {
 		return err
 	}
 
-	db, err := db.OpenConnection()
-	if err != nil {
-		log.Println(err)
-		return err
-	}
-
-	if err = db.AddBooks(books); err != nil {
+	if err = s.db.AddBooks(books); err != nil {
 		log.Println(err)
 		return nil
 	}
@@ -46,7 +41,7 @@ func main() {
 		log.Fatal("Fail to load .env file")
 	}
 
-	lis, err := net.Listen("tcp", "0.0.0.0:8000")
+	lis, err := net.Listen("tcp", "0.0.0.0:8080")
 
 	if err != nil {
 		log.Fatal(err)
@@ -54,7 +49,11 @@ func main() {
 
 	s := grpc.NewServer()
 
-	pb.RegisterBookServer(s, &server{})
+	db, err := db.OpenConnection()
+	if err != nil {
+		log.Fatalf("Cannot connect to db: %v", err)
+	}
+	pb.RegisterBookServer(s, &server{db: db})
 
 	stop := make(chan os.Signal, 2)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)

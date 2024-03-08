@@ -32,6 +32,9 @@ func OpenConnection() (*Queries, error) {
 		return nil, pingErr
 	}
 	fmt.Println("Connected")
+	if err := Init(db); err != nil {
+		return nil, err
+	}
 	return &Queries{
 		BookQueries: &queries.BookQueries{DB: db},
 	}, nil
