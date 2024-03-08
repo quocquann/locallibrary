@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net"
 	"os"
@@ -11,27 +12,29 @@ import (
 	"github.com/quocquann/locallibrary/crawler"
 	"github.com/quocquann/locallibrary/db"
 	pb "github.com/quocquann/locallibrary/protos/book"
+	"github.com/quocquann/locallibrary/queries"
 	"google.golang.org/grpc"
 )
 
 type server struct {
 	pb.UnimplementedBookServer
-	db *db.Queries
+	db *sql.DB
 }
 
 func (s *server) GetBook(req *pb.BookRequest, stream pb.Book_GetBookServer) error {
+	bookQueries := queries.NewBookQueries(s.db)
 	books, err := crawler.CrawlBook("https://gacxepbookstore.vn")
 	if err != nil {
 		return err
 	}
 
-	if err = s.db.AddBooks(books); err != nil {
+	if err = bookQueries.AddBooks(books); err != nil {
 		log.Println(err)
 		return nil
 	}
 
 	for _, book := range books {
-		stream.Send(&pb.BookResponse{Title: book.Title, Image: book.Image, Author: book.Author, Genre: book.Genre})
+		stream.Send(&pb.BookResponse{Title: book.Title, Image: book.Image, Author: book.Author.Name, Genre: book.Genre})
 	}
 	return nil
 }

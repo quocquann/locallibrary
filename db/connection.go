@@ -6,14 +6,9 @@ import (
 	"os"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/quocquann/locallibrary/queries"
 )
 
-type Queries struct {
-	*queries.BookQueries
-}
-
-func OpenConnection() (*Queries, error) {
+func OpenConnection() (*sql.DB, error) {
 	cfg := mysql.Config{
 		User:   os.Getenv("DB_USERNAME"),
 		Passwd: os.Getenv("DB_PASSWORD"),
@@ -35,7 +30,5 @@ func OpenConnection() (*Queries, error) {
 	if err := Init(db); err != nil {
 		return nil, err
 	}
-	return &Queries{
-		BookQueries: &queries.BookQueries{DB: db},
-	}, nil
+	return db, nil
 }
