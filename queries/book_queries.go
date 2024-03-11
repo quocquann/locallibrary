@@ -26,7 +26,7 @@ func (q *BookQueries) GetBooks() ([]models.Book, error) {
 
 	books := []models.Book{}
 
-	query := "SELECT Title, Image, Author.Name, Genre FROM Book JOIN Author ON Book.author_id = Author.author_id"
+	query := "SELECT Title, Image, Author.Name, Genre FROM Book JOIN Author ON Book.author_id = Author.id"
 	rows, err := q.Query(query)
 	if err != nil {
 		return books, err
@@ -64,7 +64,7 @@ func (q *BookQueries) AddBooks(books []models.Book) error {
 
 	authorMap := map[string]int{}
 
-	queryString = "SELECT * FROM Author"
+	queryString = "SELECT Id, Name FROM Author"
 	rows, err := q.Query(queryString)
 	if err != nil {
 		return err
