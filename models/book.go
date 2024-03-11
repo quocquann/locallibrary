@@ -1,14 +1,12 @@
 package models
 
 type Book struct {
+	Id     int
+	Isbn   string
 	Title  string
 	Image  string
 	Author Author
 	Genre  string
-}
-
-type Author struct {
-	Name string
 }
 
 type BookBaseInfo struct {
