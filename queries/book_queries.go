@@ -44,42 +44,18 @@ func (q *BookQueries) GetBooks() ([]models.Book, error) {
 }
 
 func (q *BookQueries) AddBooks(books []models.Book) error {
-
-	queryString := "INSERT INTO Author(Name) VALUES "
-	b := bytes.Buffer{}
-	b.WriteString(queryString)
-	vals := []interface{}{}
-	for _, book := range books {
-		b.WriteString("(?),")
-		vals = append(vals, book.Author.Name)
-	}
-
-	b.Truncate(b.Len() - 1)
-	b.WriteString(" ON DUPLICATE KEY UPDATE Name=VALUES(Name)")
-
-	_, err := q.Exec(b.String(), vals...)
-	if err != nil {
+	authorQueries := NewAuthorQueries(q.DB)
+	if err := authorQueries.AddAuthor(books); err != nil {
 		return err
 	}
-
-	authorMap := map[string]int{}
-
-	queryString = "SELECT Id, Name FROM Author"
-	rows, err := q.Query(queryString)
+	authorMap, err := authorQueries.GetAuthorMap()
 	if err != nil {
 		return err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		authorId := 0
-		authorName := ""
-		rows.Scan(&authorId, &authorName)
-		authorMap[authorName] = authorId
 	}
 
 	query := "INSERT INTO Book(Title, Image, Author_id, Genre) VALUES "
-	vals = []interface{}{}
-	b = bytes.Buffer{}
+	vals := []interface{}{}
+	b := bytes.Buffer{}
 	b.WriteString(query)
 	for _, book := range books {
 		b.WriteString("(?, ?, ?, ?),")
