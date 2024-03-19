@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/quocquann/locallibrary/models"
@@ -50,7 +51,10 @@ func CrawlBook(url string) ([]models.Book, error) {
 	}
 
 	for i := 0; i < numBookItem; i++ {
-		books = append(books, <-result)
+		res := <-result
+		if res.Isbn != "" && res.Publisher.Name != "" {
+			books = append(books, res)
+		}
 	}
 
 	return books, nil
@@ -78,6 +82,22 @@ func getDetail(jobs chan models.BookBaseInfo, result chan models.Book) {
 
 		author := doc.Find(".group-status").First().Find("p:first-child a").Text()
 		genre := doc.Find(".group-status").First().Find("p:nth-child(2) a").Text()
-		result <- models.Book{Title: job.Title, Image: "https:" + job.Image, Author: author, Genre: genre}
+		isbn := doc.Find(".rte.description.rte-summary ul li:nth-child(4)").Text()
+		publisher := doc.Find(".rte.description.rte-summary ul li:nth-child(1)").Text()
+		describe := doc.Find("#tabs-1 p:first-child").Text()
+
+		if !strings.HasPrefix(isbn, "ISBN") {
+			isbn = ""
+		} else {
+			isbn = isbn[len(isbn)-10:]
+		}
+
+		if !strings.HasPrefix(publisher, "Publisher") {
+			publisher = ""
+		} else {
+			fmt.Println()
+			publisher = strings.TrimSpace(strings.Split(publisher, ":")[1])
+		}
+		result <- models.Book{Isbn: isbn, Title: job.Title, Image: "https:" + job.Image, Describe: describe, Author: models.Author{Name: author}, Genre: models.Genre{Name: genre}, Publisher: models.Publisher{Name: publisher}}
 	}
 }
