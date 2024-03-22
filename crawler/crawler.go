@@ -28,9 +28,10 @@ func CrawlBook(url string) ([]models.Book, error) {
 	if err != nil {
 		return []models.Book{}, err
 	}
-
-	bookItems := doc.Find(".product-loop-1.product-loop-sea.product-base")
-
+	//TODO: this line use for home page
+	// bookItems := doc.Find(".product-loop-1.product-loop-sea.product-base")
+	//TODO: this line use for all book page
+	bookItems := doc.Find(".product-loop-1.product-base")
 	numBookItem := bookItems.Length()
 
 	const numWorker int = 20
@@ -39,8 +40,12 @@ func CrawlBook(url string) ([]models.Book, error) {
 
 	bookItems.Each(func(i int, s *goquery.Selection) {
 		title := s.Find("h3.product-name a").Text()
-		image := s.Find(".product-thumbnail>a.image_link.display_flex>img").AttrOr("data-lazyload", "")
+		// image := s.Find(".product-thumbnail>a.image_link.display_flex>img").AttrOr("data-lazyload", "")
+		image := s.Find("h3.product-name a").AttrOr("href", "")
+
 		detailUrl := s.Find("h3.product-name a").AttrOr("href", "")
+		//TODO: this line use for all book page]
+		url = strings.Split(url, "/all")[0]
 		jobs <- models.BookBaseInfo{Title: title, Image: image, Url: url + detailUrl}
 	})
 
@@ -62,6 +67,7 @@ func CrawlBook(url string) ([]models.Book, error) {
 
 func getDetail(jobs chan models.BookBaseInfo, result chan models.Book) {
 	for job := range jobs {
+		fmt.Println(job.Url)
 		res, err := http.Get(job.Url)
 		if err != nil {
 			log.Println(err)
@@ -98,6 +104,6 @@ func getDetail(jobs chan models.BookBaseInfo, result chan models.Book) {
 			fmt.Println()
 			publisher = strings.TrimSpace(strings.Split(publisher, ":")[1])
 		}
-		result <- models.Book{Isbn: isbn, Title: job.Title, Image: "https:" + job.Image, Describe: describe, Author: models.Author{Name: author}, Genre: models.Genre{Name: genre}, Publisher: models.Publisher{Name: publisher}}
+		result <- models.Book{Isbn: isbn, Title: job.Title, Image: job.Image, Describe: describe, Author: models.Author{Name: author}, Genre: models.Genre{Name: genre}, Publisher: models.Publisher{Name: publisher}}
 	}
 }

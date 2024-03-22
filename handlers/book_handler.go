@@ -64,7 +64,7 @@ func (*BookHandler) GetBooks(c *fiber.Ctx) error {
 	// }
 
 	fmt.Println("FROM Crawl")
-	books, err := crawler.CrawlBook("https://gacxepbookstore.vn")
+	books, err := crawler.CrawlBook("https://gacxepbookstore.vn/all-books?page=5")
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": true,
