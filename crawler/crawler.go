@@ -104,6 +104,6 @@ func getDetail(jobs chan models.BookBaseInfo, result chan models.Book) {
 			fmt.Println()
 			publisher = strings.TrimSpace(strings.Split(publisher, ":")[1])
 		}
-		result <- models.Book{Isbn: isbn, Title: job.Title, Image: job.Image, Describe: describe, Author: models.Author{Name: author}, Genre: models.Genre{Name: genre}, Publisher: models.Publisher{Name: publisher}}
+		result <- models.Book{Isbn: isbn, Title: job.Title, Image: job.Image + ".jpg", Describe: describe, Author: models.Author{Name: author}, Genre: models.Genre{Name: genre}, Publisher: models.Publisher{Name: publisher}}
 	}
 }
