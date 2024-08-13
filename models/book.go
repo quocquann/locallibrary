@@ -1,12 +1,12 @@
 package models
 
 type Book struct {
-	Id     int
-	Isbn   string
-	Title  string
-	Image  string
-	Author Author
-	Genre  string
+	Id     int    `json:"id"`
+	Isbn   string `json:"isbn"`
+	Title  string `json:"title"`
+	Image  string `json:"image"`
+	Author Author `json: "author"`
+	Genre  string `json:"genre"`
 }
 
 type BookBaseInfo struct {
